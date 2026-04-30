@@ -93,7 +93,58 @@ class GreenButtons extends Component {
           const t1 = performance.now();
           console.log(`Created NBT for 'view online' by ${(t1 - t0).toString()}ms`);
           const { NBT_Array } = e.data.body;
-          onGetViewOnlineNBT(NBT_Array);
+          const NBT_Array_gzipped = gzip(new Uint8Array(NBT_Array));
+          if (workerHeader === "CREATE_NBT_SPLIT") {
+            zipFile.file(`${uploadedImage_baseFilename}_${whichMap_x}_${whichMap_y}.nbt`, NBT_Array_gzipped);
+            if (numberOfSplitsCalculated === optionValue_mapSize_x * optionValue_mapSize_y) {
+              zipFile.generateAsync({ type: "blob" }).then((content) => {
+                downloadBlobFile(content, `${uploadedImage_baseFilename}.zip`);
+              });
+            }
+          } else {
+            const downloadBlob = new Blob([NBT_Array_gzipped], { type: "application/x-minecraft-level" });
+            downloadBlobFile(downloadBlob, `${uploadedImage_baseFilename}.nbt`);
+          }
+          break;
+        }
+        case "LITEMATIC_ARRAY": {
+          const t1 = performance.now();
+          console.log(`Created Litematic by ${(t1 - t0).toString()}ms`);
+          const { Litematic_Bytes } = e.data.body;
+          const Litematic_Bytes_gzipped = gzip(new Uint8Array(Litematic_Bytes));
+          const downloadBlob = new Blob([Litematic_Bytes_gzipped], { type: "application/octet-stream" });
+          downloadBlobFile(downloadBlob, `${uploadedImage_baseFilename}.litematic`);
+          break;
+        }
+        case "MAPDAT_BYTES": {
+          const t1 = performance.now();
+          console.log(`Created Mapdat by ${(t1 - t0).toString()}ms`);
+          numberOfSplitsCalculated++;
+          const { Mapdat_Bytes, whichMap_x, whichMap_y } = e.data.body;
+          const Mapdat_Bytes_gzipped = gzip(new Uint8Array(Mapdat_Bytes));
+          const downloadBlob = new Blob([Mapdat_Bytes_gzipped], { type: "application/x-minecraft-level" });
+          downloadBlobFile(downloadBlob, optionValue_mapdatFilenameUseId
+            ? `map_${(optionValue_mapdatFilenameIdStart + whichMap_y * optionValue_mapSize_x + whichMap_x).toString()}.dat`
+            : `${uploadedImage_baseFilename}_${whichMap_x.toString()}_${whichMap_y.toString()}.dat`);
+          break;
+        }
+        case "MAPDAT_BYTES_ZIP": {
+          const t1 = performance.now();
+          console.log(`Created Mapdat by ${(t1 - t0).toString()}ms`);
+          numberOfSplitsCalculated++;
+          const { Mapdat_Bytes, whichMap_x, whichMap_y } = e.data.body;
+          const Mapdat_Bytes_gzipped = gzip(new Uint8Array(Mapdat_Bytes));
+          zipFile.file(
+            optionValue_mapdatFilenameUseId
+              ? `map_${(optionValue_mapdatFilenameIdStart + whichMap_y * optionValue_mapSize_x + whichMap_x).toString()}.dat`
+              : `${uploadedImage_baseFilename}_${whichMap_x.toString()}_${whichMap_y.toString()}.dat`,
+            Mapdat_Bytes_gzipped
+          );
+          if (numberOfSplitsCalculated === optionValue_mapSize_x * optionValue_mapSize_y) {
+            zipFile.generateAsync({ type: "blob" }).then((content) => {
+              downloadBlobFile(content, `${uploadedImage_baseFilename}.zip`);
+            });
+          }
           break;
         }
         case "NBT_ARRAY": {
@@ -119,7 +170,7 @@ class GreenButtons extends Component {
           const t1 = performance.now();
           console.log(`Created Litematic by ${(t1 - t0).toString()}ms`);
           const { Litematic_Bytes } = e.data.body;
-          const Litematic_Bytes_gzipped = gzip(Litematic_Bytes);
+          const Litematic_Bytes_gzipped = gzip(new Uint8Array(Litematic_Bytes));
           const downloadBlob = new Blob([Litematic_Bytes_gzipped], { type: "application/octet-stream" });
           downloadBlobFile(downloadBlob, `${uploadedImage_baseFilename}.litematic`);
           break;
