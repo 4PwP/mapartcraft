@@ -32,6 +32,12 @@
         "localeKey": "MAP-SETTINGS/3D/FULL-LIGHT",
         "toneKeys": ["light"],
         "extra": true
+      },
+      "CUSTOM_3D": {
+        "uniqueId": 11,
+        "localeKey": "MAP-SETTINGS/3D/CUSTOM-3D",
+        "toneKeys": ["dark", "normal", "light"],
+        "extra": true
       }
     }
   },
@@ -73,6 +79,12 @@
         "uniqueId": 10,
         "localeKey": "MAP-SETTINGS/3D/FULL-UNOBTAINABLE",
         "toneKeys": ["unobtainable"],
+        "extra": true
+      },
+      "CUSTOM_3D": {
+        "uniqueId": 12,
+        "localeKey": "MAP-SETTINGS/3D/CUSTOM-3D",
+        "toneKeys": ["dark", "normal", "light"],
         "extra": true
       }
     }

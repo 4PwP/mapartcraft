@@ -150,8 +150,10 @@ class ViewOnline2D extends Component {
           [
             MapModes.SCHEMATIC_NBT.staircaseModes.CLASSIC.uniqueId,
             MapModes.SCHEMATIC_NBT.staircaseModes.VALLEY.uniqueId,
+            MapModes.SCHEMATIC_NBT.staircaseModes.CUSTOM_3D.uniqueId,
             MapModes.MAPDAT.staircaseModes.ON.uniqueId,
             MapModes.MAPDAT.staircaseModes.ON_UNOBTAINABLE.uniqueId,
+            MapModes.MAPDAT.staircaseModes.CUSTOM_3D.uniqueId,
           ].includes(optionValue_staircasing)
         ) {
           canvasRef_viewOnline_ctx.strokeText(block_coords[1], 33 * block_coords[0] + 31, 33 * (block_coords[2] + 1) - 2, 31);

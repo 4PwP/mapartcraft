@@ -8,6 +8,8 @@ var optionValue_modeNBTOrMapdat;
 var optionValue_mapSize_x;
 var optionValue_mapSize_y;
 var optionValue_staircasing;
+var optionValue_effectiveToneKeys;
+var optionValue_applyValleyOptimization;
 var optionValue_whereSupportBlocks;
 var optionValue_transparency;
 var optionValue_transparencyTolerance;
@@ -143,9 +145,7 @@ function setupColourSetsToUse() {
   });
 
   // now get appropriate shades
-  const toneKeys = Object.values(Object.values(MapModes).find((mapMode) => mapMode.uniqueId === optionValue_modeNBTOrMapdat).staircaseModes).find(
-    (staircaseMode) => staircaseMode.uniqueId === optionValue_staircasing
-  ).toneKeys;
+  const toneKeys = optionValue_effectiveToneKeys;
 
   for (const colourSetId of colourSetIdsToUse) {
     let tonesRGB = {};
@@ -571,8 +571,8 @@ function getMapartImageDataAndMaterials() {
         }
         maps[whichMap_y][whichMap_x].materials[closestColourSetIdAndTone.colourSetId] += 1;
 
-        if (optionValue_staircasing === MapModes.SCHEMATIC_NBT.staircaseModes.VALLEY.uniqueId) {
-          // In valley mode, we count for unnecessary support block.
+        if (optionValue_applyValleyOptimization) {
+          // VALLEY / CUSTOM_3D with both +y and -y enabled: we count for unnecessary support block.
           const data = unnecessarySupportBlock.get(
             unnecessarySupportBlockMapIndex
           );
@@ -613,6 +613,8 @@ onmessage = (e) => {
   optionValue_mapSize_x = e.data.body.optionValue_mapSize_x;
   optionValue_mapSize_y = e.data.body.optionValue_mapSize_y;
   optionValue_staircasing = e.data.body.optionValue_staircasing;
+  optionValue_effectiveToneKeys = e.data.body.effectiveToneKeys;
+  optionValue_applyValleyOptimization = e.data.body.applyValleyOptimization;
   optionValue_whereSupportBlocks = e.data.body.optionValue_whereSupportBlocks;
   optionValue_transparency = e.data.body.optionValue_transparency;
   optionValue_transparencyTolerance = e.data.body.optionValue_transparencyTolerance;

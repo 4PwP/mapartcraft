@@ -20,45 +20,31 @@ class BlockSelection extends Component {
   }
 
   getColourSetBox = (colourSet) => {
-    const { optionValue_staircasing } = this.props;
+    const { effectiveToneKeys } = this.props;
     let background;
-    switch (optionValue_staircasing) {
-      case MapModes.SCHEMATIC_NBT.staircaseModes.OFF.uniqueId:
-      case MapModes.MAPDAT.staircaseModes.OFF.uniqueId: {
-        background = this.cssRGB(colourSet.tonesRGB.normal);
-        break;
-      }
-      case MapModes.SCHEMATIC_NBT.staircaseModes.CLASSIC.uniqueId:
-      case MapModes.SCHEMATIC_NBT.staircaseModes.VALLEY.uniqueId:
-      case MapModes.MAPDAT.staircaseModes.ON.uniqueId: {
-        background = `linear-gradient(${this.cssRGB(colourSet.tonesRGB.dark)} 33%, ${this.cssRGB(colourSet.tonesRGB.normal)} 33%, ${this.cssRGB(
-          colourSet.tonesRGB.normal
-        )} 66%, ${this.cssRGB(colourSet.tonesRGB.light)} 66%)`;
-        break;
-      }
-      case MapModes.MAPDAT.staircaseModes.ON_UNOBTAINABLE.uniqueId: {
-        background = `linear-gradient(${this.cssRGB(colourSet.tonesRGB.unobtainable)} 25%, ${this.cssRGB(colourSet.tonesRGB.dark)} 25%, ${this.cssRGB(
-          colourSet.tonesRGB.dark
-        )} 50%, ${this.cssRGB(colourSet.tonesRGB.normal)} 50%, ${this.cssRGB(colourSet.tonesRGB.normal)} 75%, ${this.cssRGB(colourSet.tonesRGB.light)} 75%)`;
-        break;
-      }
-      case MapModes.SCHEMATIC_NBT.staircaseModes.FULL_DARK.uniqueId:
-      case MapModes.MAPDAT.staircaseModes.FULL_DARK.uniqueId: {
-        background = this.cssRGB(colourSet.tonesRGB.dark);
-        break;
-      }
-      case MapModes.SCHEMATIC_NBT.staircaseModes.FULL_LIGHT.uniqueId:
-      case MapModes.MAPDAT.staircaseModes.FULL_LIGHT.uniqueId: {
-        background = this.cssRGB(colourSet.tonesRGB.light);
-        break;
-      }
-      case MapModes.MAPDAT.staircaseModes.FULL_UNOBTAINABLE.uniqueId: {
-        background = this.cssRGB(colourSet.tonesRGB.unobtainable);
-        break;
-      }
-      default: {
-        throw new Error("Unknown staircasing value");
-      }
+    if (effectiveToneKeys.length === 1) {
+      background = this.cssRGB(colourSet.tonesRGB[effectiveToneKeys[0]]);
+    } else if (effectiveToneKeys.length === 2) {
+      const mid = "50%";
+      background = `linear-gradient(${this.cssRGB(colourSet.tonesRGB[effectiveToneKeys[0]])} ${mid}, ${this.cssRGB(colourSet.tonesRGB[effectiveToneKeys[1]])} ${mid})`;
+    } else if (effectiveToneKeys.length === 3) {
+      const a = "33%";
+      const b = "66%";
+      background = `linear-gradient(${this.cssRGB(colourSet.tonesRGB[effectiveToneKeys[0]])} ${a}, ${this.cssRGB(colourSet.tonesRGB[effectiveToneKeys[1]])} ${a}, ${this.cssRGB(
+        colourSet.tonesRGB[effectiveToneKeys[1]]
+      )} ${b}, ${this.cssRGB(colourSet.tonesRGB[effectiveToneKeys[2]])} ${b})`;
+    } else if (effectiveToneKeys.length === 4) {
+      // MAPDAT ON_UNOBTAINABLE: unobtainable, dark, normal, light
+      const a = "25%";
+      const b = "50%";
+      const c = "75%";
+      background = `linear-gradient(${this.cssRGB(colourSet.tonesRGB[effectiveToneKeys[0]])} ${a}, ${this.cssRGB(colourSet.tonesRGB[effectiveToneKeys[1]])} ${a}, ${this.cssRGB(
+        colourSet.tonesRGB[effectiveToneKeys[1]]
+      )} ${b}, ${this.cssRGB(colourSet.tonesRGB[effectiveToneKeys[2]])} ${b}, ${this.cssRGB(colourSet.tonesRGB[effectiveToneKeys[2]])} ${c}, ${this.cssRGB(
+        colourSet.tonesRGB[effectiveToneKeys[3]]
+      )} ${c})`;
+    } else {
+      throw new Error("Unknown effectiveToneKeys length");
     }
     return (
       <div

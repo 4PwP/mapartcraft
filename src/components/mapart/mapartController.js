@@ -23,6 +23,10 @@ import IMG_Upload from "../../images/upload.png";
 import "./mapartController.css";
 
 class MapartController extends Component {
+  // Memoize derived values that map (staircasing mode + direction flags) to stable references. Declared as instance fields so React doesn't re-render when the cache contents change.
+  _activeToneKeysCache = null;
+  _applyValleyOptimizationCache = null;
+
   state = {
     coloursJSON: null,
     selectedBlocks: {},
@@ -36,6 +40,8 @@ class MapartController extends Component {
     optionValue_cropImage_percent_y: 50,
     optionValue_showGridOverlay: false,
     optionValue_staircasing: MapModes.SCHEMATIC_NBT.staircaseModes.VALLEY.uniqueId,
+    optionValue_staircaseYPositive: true,
+    optionValue_staircaseYNegative: true,
     optionValue_whereSupportBlocks: WhereSupportBlocksModes.ALL_OPTIMIZED.uniqueId,
     optionValue_supportBlock: "cobblestone",
     optionValue_noSupportBlocksFirstRow: false,
@@ -298,6 +304,91 @@ class MapartController extends Component {
     this.setState({ optionValue_staircasing: staircasingValue });
   };
 
+  onOptionChange_staircaseYPositive = () => {
+    this.setState((currentState) => ({
+      optionValue_staircaseYPositive: !currentState.optionValue_staircaseYPositive,
+    }));
+  };
+
+  onOptionChange_staircaseYNegative = () => {
+    this.setState((currentState) => ({
+      optionValue_staircaseYNegative: !currentState.optionValue_staircaseYNegative,
+    }));
+  };
+
+  isCustom3DMode() {
+    const { optionValue_modeNBTOrMapdat, optionValue_staircasing } = this.state;
+    return (
+      optionValue_staircasing === MapModes.SCHEMATIC_NBT.staircaseModes.CUSTOM_3D.uniqueId ||
+      optionValue_staircasing === MapModes.MAPDAT.staircaseModes.CUSTOM_3D.uniqueId
+    );
+  }
+
+  getToneKeysMemoKey() {
+    const { optionValue_modeNBTOrMapdat, optionValue_staircasing, optionValue_staircaseYPositive, optionValue_staircaseYNegative } = this.state;
+    return `${optionValue_modeNBTOrMapdat}|${optionValue_staircasing}|${optionValue_staircaseYPositive}|${optionValue_staircaseYNegative}`;
+  }
+
+  getActiveToneKeys() {
+    // Memoized: returns the same array reference when inputs are unchanged so child componentDidUpdate propChecks see a stable identity (otherwise the canvas componentDidUpdate triggers an infinite update loop).
+    const key = this.getToneKeysMemoKey();
+    const cached = this._activeToneKeysCache;
+    if (cached !== null && cached.key === key) {
+      return cached.value;
+    }
+    const { optionValue_modeNBTOrMapdat, optionValue_staircasing, optionValue_staircaseYPositive, optionValue_staircaseYNegative } = this.state;
+    let value;
+    if (this.isCustom3DMode()) {
+      const keys = ["normal"];
+      if (optionValue_staircaseYNegative) keys.unshift("dark");
+      if (optionValue_staircaseYPositive) keys.push("light");
+      value = keys;
+    } else {
+      value = Object.values(Object.values(MapModes).find((mapMode) => mapMode.uniqueId === optionValue_modeNBTOrMapdat).staircaseModes).find(
+        (staircaseMode) => staircaseMode.uniqueId === optionValue_staircasing
+      ).toneKeys;
+    }
+    this._activeToneKeysCache = { key, value };
+    return value;
+  }
+
+  isStaircasingEnabled() {
+    const { optionValue_staircasing } = this.state;
+    if (this.isCustom3DMode()) {
+      return this.state.optionValue_staircaseYPositive || this.state.optionValue_staircaseYNegative;
+    }
+    return [
+      MapModes.SCHEMATIC_NBT.staircaseModes.CLASSIC.uniqueId,
+      MapModes.SCHEMATIC_NBT.staircaseModes.VALLEY.uniqueId,
+      MapModes.MAPDAT.staircaseModes.ON.uniqueId,
+      MapModes.MAPDAT.staircaseModes.ON_UNOBTAINABLE.uniqueId,
+    ].includes(optionValue_staircasing);
+  }
+
+  applyValleyOptimization() {
+    // Memoized for symmetry with getActiveToneKeys; avoids spurious re-renders if any caller compares references.
+    const key = this.getToneKeysMemoKey();
+    const cached = this._applyValleyOptimizationCache;
+    if (cached !== null && cached.key === key) {
+      return cached.value;
+    }
+    const { optionValue_modeNBTOrMapdat, optionValue_staircasing, optionValue_staircaseYPositive, optionValue_staircaseYNegative } = this.state;
+    let value = false;
+    if (optionValue_modeNBTOrMapdat === MapModes.SCHEMATIC_NBT.uniqueId) {
+      if (optionValue_staircasing === MapModes.SCHEMATIC_NBT.staircaseModes.VALLEY.uniqueId) {
+        value = true;
+      } else if (
+        optionValue_staircasing === MapModes.SCHEMATIC_NBT.staircaseModes.CUSTOM_3D.uniqueId &&
+        optionValue_staircaseYPositive &&
+        optionValue_staircaseYNegative
+      ) {
+        value = true;
+      }
+    }
+    this._applyValleyOptimizationCache = { key, value };
+    return value;
+  }
+
   onOptionChange_transparency = () => {
     this.setState({
       optionValue_transparency: !this.state.optionValue_transparency,
@@ -433,24 +524,14 @@ class MapartController extends Component {
       (Object.entries(selectedBlocks).some(([colourSetId, blockId]) => blockId !== "-1" && coloursJSON[colourSetId].blocks[blockId].presetIndex === "CUSTOM")
         ? "\n; Custom blocks not listed!"
         : "") +
-      "\n; staircasing: " +
-      ([
-        MapModes.SCHEMATIC_NBT.staircaseModes.CLASSIC.uniqueId,
-        MapModes.SCHEMATIC_NBT.staircaseModes.VALLEY.uniqueId,
-        MapModes.MAPDAT.staircaseModes.ON.uniqueId,
-        MapModes.MAPDAT.staircaseModes.ON_UNOBTAINABLE.uniqueId,
-      ].includes(optionValue_staircasing)
-        ? "enabled"
-        : "disabled") +
+      "\n; staircasing: " + (this.isStaircasingEnabled() ? "enabled" : "disabled") +
       "\n; unobtainable colours: " +
       ([MapModes.MAPDAT.staircaseModes.ON_UNOBTAINABLE.uniqueId, MapModes.MAPDAT.staircaseModes.FULL_UNOBTAINABLE.uniqueId].includes(optionValue_staircasing)
         ? "enabled"
         : "disabled") +
       "\n";
     let numberOfColoursExported = 0;
-    const toneKeysToExport = Object.values(Object.values(MapModes).find((mapMode) => mapMode.uniqueId === optionValue_modeNBTOrMapdat).staircaseModes).find(
-      (staircaseMode) => staircaseMode.uniqueId === optionValue_staircasing
-    ).toneKeys; // this .find stuff is annoying.
+    const toneKeysToExport = this.getActiveToneKeys();
     // TODO change from uniqueId to key
     for (const [selectedBlock_colourSetId, selectedBlock_blockId] of Object.entries(selectedBlocks)) {
       if (selectedBlock_blockId !== "-1") {
@@ -814,6 +895,8 @@ class MapartController extends Component {
       optionValue_extras_moreStaircasingOptions,
       optionValue_minimumBlockCountEnabled,
       optionValue_minimumBlockCount,
+      optionValue_staircaseYPositive,
+      optionValue_staircaseYNegative,
       mapPreviewRegenerateCounter,
       uploadedImage,
       uploadedImage_baseFilename,
@@ -833,6 +916,7 @@ class MapartController extends Component {
           optionValue_version={optionValue_version}
           optionValue_modeNBTOrMapdat={optionValue_modeNBTOrMapdat}
           optionValue_staircasing={optionValue_staircasing}
+          effectiveToneKeys={this.getActiveToneKeys()}
           selectedBlocks={selectedBlocks}
           presets={presets}
           selectedPresetName={selectedPresetName}
@@ -870,12 +954,15 @@ class MapartController extends Component {
             preProcessingValue_contrast={preProcessingValue_contrast}
             preProcessingValue_saturation={preProcessingValue_saturation}
             preProcessingValue_backgroundColourSelect={preProcessingValue_backgroundColourSelect}
-            preProcessingValue_backgroundColour={preProcessingValue_backgroundColour}              uploadedImage={uploadedImage}
-              onFileDialogEvent={this.onFileDialogEvent}
-              onGetMapMaterials={this.handleSetMapMaterials}
-              onMapPreviewWorker_begin={this.onMapPreviewWorker_begin}
-              mapPreviewRegenerateCounter={mapPreviewRegenerateCounter}
-            />
+            preProcessingValue_backgroundColour={preProcessingValue_backgroundColour}
+            uploadedImage={uploadedImage}
+            onFileDialogEvent={this.onFileDialogEvent}
+            onGetMapMaterials={this.handleSetMapMaterials}
+            onMapPreviewWorker_begin={this.onMapPreviewWorker_begin}
+            mapPreviewRegenerateCounter={mapPreviewRegenerateCounter}
+            effectiveToneKeys={this.getActiveToneKeys()}
+            applyValleyOptimization={this.applyValleyOptimization()}
+          />
           <div style={{ display: "block" }}>
             <MapSettings
               getLocaleString={getLocaleString}
@@ -900,6 +987,10 @@ class MapartController extends Component {
               onOptionChange_showGridOverlay={this.onOptionChange_showGridOverlay}
               optionValue_staircasing={optionValue_staircasing}
               onOptionChange_staircasing={this.onOptionChange_staircasing}
+              optionValue_staircaseYPositive={optionValue_staircaseYPositive}
+              onOptionChange_staircaseYPositive={this.onOptionChange_staircaseYPositive}
+              optionValue_staircaseYNegative={optionValue_staircaseYNegative}
+              onOptionChange_staircaseYNegative={this.onOptionChange_staircaseYNegative}
               optionValue_whereSupportBlocks={optionValue_whereSupportBlocks}
               onOptionChange_WhereSupportBlocks={this.onOptionChange_WhereSupportBlocks}
               optionValue_supportBlock={optionValue_supportBlock}

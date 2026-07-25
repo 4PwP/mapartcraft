@@ -40,6 +40,10 @@ class MapSettings extends Component {
       onOptionChange_showGridOverlay,
       optionValue_staircasing,
       onOptionChange_staircasing,
+      optionValue_staircaseYPositive,
+      onOptionChange_staircaseYPositive,
+      optionValue_staircaseYNegative,
+      onOptionChange_staircaseYNegative,
       optionValue_whereSupportBlocks,
       onOptionChange_WhereSupportBlocks,
       optionValue_supportBlock,
@@ -700,6 +704,42 @@ class MapSettings extends Component {
         </td>
       </tr>
     );
+    const isCustom3D =
+      optionValue_staircasing === MapModes.SCHEMATIC_NBT.staircaseModes.CUSTOM_3D.uniqueId ||
+      optionValue_staircasing === MapModes.MAPDAT.staircaseModes.CUSTOM_3D.uniqueId;
+    let setting_extras_custom3DDirections = null;
+    if (isCustom3D) {
+      setting_extras_custom3DDirections = (
+        <React.Fragment>
+          <tr>
+            <th>
+              <Tooltip tooltipText={getLocaleString("MAP-SETTINGS/EXTRAS/USE-POSITIVE-Y-TT")}>
+                <b>
+                  {getLocaleString("MAP-SETTINGS/EXTRAS/USE-POSITIVE-Y")}
+                  {":"}
+                </b>
+              </Tooltip>{" "}
+            </th>
+            <td colSpan="2">
+              <input type="checkbox" checked={optionValue_staircaseYPositive} onChange={onOptionChange_staircaseYPositive} />
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <Tooltip tooltipText={getLocaleString("MAP-SETTINGS/EXTRAS/USE-NEGATIVE-Y-TT")}>
+                <b>
+                  {getLocaleString("MAP-SETTINGS/EXTRAS/USE-NEGATIVE-Y")}
+                  {":"}
+                </b>
+              </Tooltip>{" "}
+            </th>
+            <td colSpan="2">
+              <input type="checkbox" checked={optionValue_staircaseYNegative} onChange={onOptionChange_staircaseYNegative} />
+            </td>
+          </tr>
+        </React.Fragment>
+      );
+    }
     const settingGroup_extras = (
       <React.Fragment>
         <details>
@@ -707,6 +747,7 @@ class MapSettings extends Component {
           <table>
             <tbody>
               {setting_extras_moreStaircasingOptions}
+              {setting_extras_custom3DDirections}
               {setting_extras_minimumBlockCount}
             </tbody>
           </table>

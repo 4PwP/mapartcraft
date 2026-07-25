@@ -95,7 +95,8 @@
       "FULL-LIGHT": "Full-Light",
       "ON": "On",
       "ON-UNOBTAINABLE": "On (Unobtainable)",
-      "FULL-UNOBTAINABLE": "Full-Unobtainable"
+      "FULL-UNOBTAINABLE": "Full-Unobtainable",
+      "CUSTOM-3D": "Custom 3D"
     },
     "NBT-SPECIFIC": {
       "WHERE-SUPPORT-BLOCKS": {
@@ -149,7 +150,11 @@
       "MORE-STAIRCASING-OPTIONS": "More Staircasing Options",
       "MORE-STAIRCASING-OPTIONS-TT": "Full-Dark, Full-Light, and Full-Unobtainable options",
       "MINIMUM-BLOCK-COUNT-TITLE": "Auto-blacklist blocks with fewer than",
-      "MINIMUM-BLOCK-COUNT-TT": "If a block is used less than configured ammount, auto blacklists it(NEED TO REGENERATE THE MAP!)"
+      "MINIMUM-BLOCK-COUNT-TT": "If a block is used less than configured ammount, auto blacklists it(NEED TO REGENERATE THE MAP!)",
+      "USE-POSITIVE-Y": "Use +y direction (stairs going up)",
+      "USE-NEGATIVE-Y": "Use -y direction (stairs going down)",
+      "USE-POSITIVE-Y-TT": "Enable stairs so blocks can rise above the base map plane (using light tones). Disabling this is like having only the lower half of the staircase.",
+      "USE-NEGATIVE-Y-TT": "Enable stairs so blocks can drop below the base map plane (using dark tones). Disabling this is like having only the upper half of the staircase."
     }
   },
   "DOWNLOAD": {

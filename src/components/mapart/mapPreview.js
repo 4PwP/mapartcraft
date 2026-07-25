@@ -41,6 +41,7 @@ class MapPreview extends Component {
       prevProps.optionValue_cropImage_percent_x === newProps.optionValue_cropImage_percent_x,
       prevProps.optionValue_cropImage_percent_y === newProps.optionValue_cropImage_percent_y,
       prevProps.optionValue_staircasing === newProps.optionValue_staircasing,
+      prevProps.effectiveToneKeys === newProps.effectiveToneKeys,
       prevProps.optionValue_preprocessingEnabled === newProps.optionValue_preprocessingEnabled,
       prevProps.preProcessingValue_brightness === newProps.preProcessingValue_brightness,
       prevProps.preProcessingValue_contrast === newProps.preProcessingValue_contrast,
@@ -71,6 +72,7 @@ class MapPreview extends Component {
       prevProps.optionValue_cropImage_percent_x === newProps.optionValue_cropImage_percent_x,
       prevProps.optionValue_cropImage_percent_y === newProps.optionValue_cropImage_percent_y,
       prevProps.optionValue_staircasing === newProps.optionValue_staircasing,
+      prevProps.effectiveToneKeys === newProps.effectiveToneKeys,
       prevProps.optionValue_whereSupportBlocks === newProps.optionValue_whereSupportBlocks,
       prevProps.optionValue_transparency === newProps.optionValue_transparency,
       prevProps.optionValue_transparencyTolerance === newProps.optionValue_transparencyTolerance,
@@ -104,7 +106,7 @@ class MapPreview extends Component {
   }
 
   closestSmoothColourTo(colourHex) {
-    const { coloursJSON, selectedBlocks, optionValue_staircasing } = this.props;
+    const { coloursJSON, selectedBlocks, effectiveToneKeys } = this.props;
     const rgbGroups_input = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(colourHex);
     const colourRGB_input = [parseInt(rgbGroups_input[1], 16), parseInt(rgbGroups_input[2], 16), parseInt(rgbGroups_input[3], 16)];
     let smallestDistance = 9999999;
@@ -113,41 +115,7 @@ class MapPreview extends Component {
       if (selectedBlocks[colourSetId] === "-1") {
         continue;
       }
-      let coloursRGB_colourSet;
-      switch (optionValue_staircasing) {
-        case MapModes.SCHEMATIC_NBT.staircaseModes.OFF.uniqueId:
-        case MapModes.SCHEMATIC_NBT.staircaseModes.CLASSIC.uniqueId:
-        case MapModes.SCHEMATIC_NBT.staircaseModes.VALLEY.uniqueId:
-        case MapModes.MAPDAT.staircaseModes.OFF.uniqueId: {
-          coloursRGB_colourSet = [colourSet.tonesRGB.normal];
-          break;
-        }
-        case MapModes.SCHEMATIC_NBT.staircaseModes.FULL_DARK.uniqueId:
-        case MapModes.MAPDAT.staircaseModes.FULL_DARK.uniqueId: {
-          coloursRGB_colourSet = [colourSet.tonesRGB.dark];
-          break;
-        }
-        case MapModes.SCHEMATIC_NBT.staircaseModes.FULL_LIGHT.uniqueId:
-        case MapModes.MAPDAT.staircaseModes.FULL_LIGHT.uniqueId: {
-          coloursRGB_colourSet = [colourSet.tonesRGB.light];
-          break;
-        }
-        case MapModes.MAPDAT.staircaseModes.FULL_UNOBTAINABLE.uniqueId: {
-          coloursRGB_colourSet = [colourSet.tonesRGB.unobtainable];
-          break;
-        }
-        case MapModes.MAPDAT.staircaseModes.ON.uniqueId: {
-          coloursRGB_colourSet = [colourSet.tonesRGB.dark, colourSet.tonesRGB.normal, colourSet.tonesRGB.light];
-          break;
-        }
-        case MapModes.MAPDAT.staircaseModes.ON_UNOBTAINABLE.uniqueId: {
-          coloursRGB_colourSet = [colourSet.tonesRGB.dark, colourSet.tonesRGB.normal, colourSet.tonesRGB.light, colourSet.tonesRGB.unobtainable];
-          break;
-        }
-        default: {
-          throw new Error("Unknown staircasing mode");
-        }
-      }
+      const coloursRGB_colourSet = effectiveToneKeys.map((toneKey) => colourSet.tonesRGB[toneKey]);
       for (const colourRGB_colourSet of coloursRGB_colourSet) {
         const colourDistance =
           Math.pow(colourRGB_input[0] - colourRGB_colourSet[0], 2) +
@@ -269,6 +237,8 @@ class MapPreview extends Component {
       optionValue_mapSize_x,
       optionValue_mapSize_y,
       optionValue_staircasing,
+      effectiveToneKeys,
+      applyValleyOptimization,
       optionValue_whereSupportBlocks,
       optionValue_transparency,
       optionValue_transparencyTolerance,
@@ -311,6 +281,8 @@ class MapPreview extends Component {
         optionValue_mapSize_x: optionValue_mapSize_x,
         optionValue_mapSize_y: optionValue_mapSize_y,
         optionValue_staircasing: optionValue_staircasing,
+        effectiveToneKeys: effectiveToneKeys,
+        applyValleyOptimization: applyValleyOptimization,
         optionValue_whereSupportBlocks: optionValue_whereSupportBlocks,
         optionValue_transparency: optionValue_transparency,
         optionValue_transparencyTolerance: optionValue_transparencyTolerance,
