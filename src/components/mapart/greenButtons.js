@@ -16,6 +16,7 @@ class GreenButtons extends Component {
   state = {
     buttonWidth_viewOnline: 1,
     buttonWidth_NBT_Joined: 1,
+    buttonWidth_Litematic_Joined: 1,
     buttonWidth_NBT_Split: 1,
     buttonWidth_Mapdat_Split: 1,
     mapPreviewWorker_onFinishCallback: null,
@@ -27,6 +28,7 @@ class GreenButtons extends Component {
     this.setState({
       buttonWidth_viewOnline: 1,
       buttonWidth_NBT_Joined: 1,
+      buttonWidth_Litematic_Joined: 1,
       buttonWidth_NBT_Split: 1,
       buttonWidth_Mapdat_Split: 1,
     });
@@ -42,6 +44,7 @@ class GreenButtons extends Component {
       optionValue_staircasing,
       optionValue_whereSupportBlocks,
       optionValue_supportBlock,
+      optionValue_noSupportBlocksFirstRow,
       optionValue_mapdatFilenameUseId,
       optionValue_mapdatFilenameIdStart,
       uploadedImage_baseFilename,
@@ -74,6 +77,10 @@ class GreenButtons extends Component {
           this.setState({ buttonWidth_NBT_Joined: e.data.body });
           break;
         }
+        case "PROGRESS_REPORT_CREATE_LITEMATIC_JOINED": {
+          this.setState({ buttonWidth_Litematic_Joined: e.data.body });
+          break;
+        }
         case "PROGRESS_REPORT_CREATE_NBT_SPLIT": {
           this.setState({ buttonWidth_NBT_Split: (numberOfSplitsCalculated + e.data.body) / (optionValue_mapSize_x * optionValue_mapSize_y) });
           break;
@@ -86,7 +93,58 @@ class GreenButtons extends Component {
           const t1 = performance.now();
           console.log(`Created NBT for 'view online' by ${(t1 - t0).toString()}ms`);
           const { NBT_Array } = e.data.body;
-          onGetViewOnlineNBT(NBT_Array);
+          const NBT_Array_gzipped = gzip(new Uint8Array(NBT_Array));
+          if (workerHeader === "CREATE_NBT_SPLIT") {
+            zipFile.file(`${uploadedImage_baseFilename}_${whichMap_x}_${whichMap_y}.nbt`, NBT_Array_gzipped);
+            if (numberOfSplitsCalculated === optionValue_mapSize_x * optionValue_mapSize_y) {
+              zipFile.generateAsync({ type: "blob" }).then((content) => {
+                downloadBlobFile(content, `${uploadedImage_baseFilename}.zip`);
+              });
+            }
+          } else {
+            const downloadBlob = new Blob([NBT_Array_gzipped], { type: "application/x-minecraft-level" });
+            downloadBlobFile(downloadBlob, `${uploadedImage_baseFilename}.nbt`);
+          }
+          break;
+        }
+        case "LITEMATIC_ARRAY": {
+          const t1 = performance.now();
+          console.log(`Created Litematic by ${(t1 - t0).toString()}ms`);
+          const { Litematic_Bytes } = e.data.body;
+          const Litematic_Bytes_gzipped = gzip(new Uint8Array(Litematic_Bytes));
+          const downloadBlob = new Blob([Litematic_Bytes_gzipped], { type: "application/octet-stream" });
+          downloadBlobFile(downloadBlob, `${uploadedImage_baseFilename}.litematic`);
+          break;
+        }
+        case "MAPDAT_BYTES": {
+          const t1 = performance.now();
+          console.log(`Created Mapdat by ${(t1 - t0).toString()}ms`);
+          numberOfSplitsCalculated++;
+          const { Mapdat_Bytes, whichMap_x, whichMap_y } = e.data.body;
+          const Mapdat_Bytes_gzipped = gzip(new Uint8Array(Mapdat_Bytes));
+          const downloadBlob = new Blob([Mapdat_Bytes_gzipped], { type: "application/x-minecraft-level" });
+          downloadBlobFile(downloadBlob, optionValue_mapdatFilenameUseId
+            ? `map_${(optionValue_mapdatFilenameIdStart + whichMap_y * optionValue_mapSize_x + whichMap_x).toString()}.dat`
+            : `${uploadedImage_baseFilename}_${whichMap_x.toString()}_${whichMap_y.toString()}.dat`);
+          break;
+        }
+        case "MAPDAT_BYTES_ZIP": {
+          const t1 = performance.now();
+          console.log(`Created Mapdat by ${(t1 - t0).toString()}ms`);
+          numberOfSplitsCalculated++;
+          const { Mapdat_Bytes, whichMap_x, whichMap_y } = e.data.body;
+          const Mapdat_Bytes_gzipped = gzip(new Uint8Array(Mapdat_Bytes));
+          zipFile.file(
+            optionValue_mapdatFilenameUseId
+              ? `map_${(optionValue_mapdatFilenameIdStart + whichMap_y * optionValue_mapSize_x + whichMap_x).toString()}.dat`
+              : `${uploadedImage_baseFilename}_${whichMap_x.toString()}_${whichMap_y.toString()}.dat`,
+            Mapdat_Bytes_gzipped
+          );
+          if (numberOfSplitsCalculated === optionValue_mapSize_x * optionValue_mapSize_y) {
+            zipFile.generateAsync({ type: "blob" }).then((content) => {
+              downloadBlobFile(content, `${uploadedImage_baseFilename}.zip`);
+            });
+          }
           break;
         }
         case "NBT_ARRAY": {
@@ -106,6 +164,15 @@ class GreenButtons extends Component {
             const downloadBlob = new Blob([NBT_Array_gzipped], { type: "application/x-minecraft-level" });
             downloadBlobFile(downloadBlob, `${uploadedImage_baseFilename}.nbt`);
           }
+          break;
+        }
+        case "LITEMATIC_ARRAY": {
+          const t1 = performance.now();
+          console.log(`Created Litematic by ${(t1 - t0).toString()}ms`);
+          const { Litematic_Bytes } = e.data.body;
+          const Litematic_Bytes_gzipped = gzip(new Uint8Array(Litematic_Bytes));
+          const downloadBlob = new Blob([Litematic_Bytes_gzipped], { type: "application/octet-stream" });
+          downloadBlobFile(downloadBlob, `${uploadedImage_baseFilename}.litematic`);
           break;
         }
         case "MAPDAT_BYTES": {
@@ -154,6 +221,7 @@ class GreenButtons extends Component {
         optionValue_staircasing: optionValue_staircasing,
         optionValue_whereSupportBlocks: optionValue_whereSupportBlocks,
         optionValue_supportBlock: optionValue_supportBlock,
+        optionValue_noSupportBlocksFirstRow: optionValue_noSupportBlocksFirstRow,
         pixelsData: currentMaterialsData.pixelsData,
         maps: currentMaterialsData.maps,
         currentSelectedBlocks: currentMaterialsData.currentSelectedBlocks,
@@ -167,6 +235,10 @@ class GreenButtons extends Component {
 
   onGetNBTClicked = () => {
     this.getNBT_base("CREATE_NBT_JOINED");
+  };
+
+  onGetLitematicClicked = () => {
+    this.getNBT_base("CREATE_LITEMATIC_JOINED");
   };
 
   onGetNBTSplitClicked = () => {
@@ -256,7 +328,7 @@ class GreenButtons extends Component {
   }
 
   render() {
-    const { buttonWidth_viewOnline, buttonWidth_NBT_Joined, buttonWidth_NBT_Split, buttonWidth_Mapdat_Split } = this.state;
+    const { buttonWidth_viewOnline, buttonWidth_NBT_Joined, buttonWidth_Litematic_Joined, buttonWidth_NBT_Split, buttonWidth_Mapdat_Split } = this.state;
     const { getLocaleString, optionValue_modeNBTOrMapdat } = this.props;
     let buttons_mapModeConditional;
     // dummy text used in divs with absolutely positioned children to create correct container height
@@ -297,6 +369,19 @@ class GreenButtons extends Component {
                 className="greenButton_progressDiv"
                 style={{
                   width: `${Math.floor(buttonWidth_NBT_Split * 100)}%`,
+                }}
+              />
+            </div>
+          </Tooltip>
+          <br />
+          <Tooltip tooltipText={getLocaleString("DOWNLOAD/NBT-SPECIFIC/DOWNLOAD-LITEMATIC-TT")}>
+            <div className="greenButton" onClick={this.onGetLitematicClicked}>
+              <span className="greenButton_large_text_dummy">{getLocaleString("DOWNLOAD/NBT-SPECIFIC/DOWNLOAD-LITEMATIC")}</span>
+              <span className="greenButton_large_text">{getLocaleString("DOWNLOAD/NBT-SPECIFIC/DOWNLOAD-LITEMATIC")}</span>
+              <div
+                className="greenButton_progressDiv"
+                style={{
+                  width: `${Math.floor(buttonWidth_Litematic_Joined * 100)}%`,
                 }}
               />
             </div>

@@ -6,6 +6,7 @@ var optionValue_version;
 var optionValue_staircasing;
 var optionValue_whereSupportBlocks;
 var optionValue_supportBlock;
+var optionValue_noSupportBlocksFirstRow;
 var pixelsData;
 var maps;
 var currentSelectedBlocks;
@@ -298,9 +299,11 @@ class Map_NBT {
       this.palette_colourSetId_paletteId[colourSetId] = this.palette_paletteId_colourSetId.length;
       this.palette_paletteId_colourSetId.push(colourSetId);
     });
-    // finally add noobline/scaffold material at the end, special key
+    // finally add support and noobline materials at the end, special keys
     this.palette_colourSetId_paletteId["NOOBLINE_SCAFFOLD"] = this.palette_paletteId_colourSetId.length;
     this.palette_paletteId_colourSetId.push("NOOBLINE_SCAFFOLD");
+    this.palette_colourSetId_paletteId["NOOBLINE_ROW"] = this.palette_paletteId_colourSetId.length;
+    this.palette_paletteId_colourSetId.push("NOOBLINE_ROW");
   }
 
   setNBT_json_palette() {
@@ -312,6 +315,11 @@ class Map_NBT {
           value: `minecraft:${optionValue_supportBlock.toLowerCase()}`,
         };
         // we expect the support block to be something non-exotic with no properties eg netherrack
+      } else if (colourSetId === "NOOBLINE_ROW") {
+        paletteItemToPush.Name = {
+          type: TagTypes.string,
+          value: optionValue_noSupportBlocksFirstRow ? "minecraft:air" : `minecraft:${optionValue_supportBlock.toLowerCase()}`,
+        };
       } else {
         let blockNBTData = coloursJSON[colourSetId].blocks[currentSelectedBlocks[colourSetId]].validVersions[optionValue_version.MCVersion];
         if (typeof blockNBTData === "string") {
@@ -390,8 +398,12 @@ class Map_NBT {
       }
     }
 
-    // initialize noobline
-    physicalColumn.push(this.returnPhysicalBlock(columnNumber, currentHeight, 0, "NOOBLINE_SCAFFOLD"));
+    const mapRowSouthOffset = optionValue_noSupportBlocksFirstRow ? 0 : 1;
+
+    // initialize noobline only when it is enabled
+    if (!optionValue_noSupportBlocksFirstRow) {
+      physicalColumn.push(this.returnPhysicalBlock(columnNumber, currentHeight, 0, "NOOBLINE_ROW"));
+    }
 
     for (let rowNumber = 0; rowNumber < mapColoursLayoutColumn.length; rowNumber++) {
       const coloursLayoutBlock = mapColoursLayoutColumn[rowNumber];
@@ -414,8 +426,11 @@ class Map_NBT {
         }
       }
 
-      physicalColumn.push(this.returnPhysicalBlock(columnNumber, currentHeight, rowNumber + 1, coloursLayoutBlock.colourSetId));
-      // the + 1 is because the noobline offsets everything South one block
+      const mapRowZ = rowNumber + mapRowSouthOffset;
+      const northFaceZ = mapRowZ - 1;
+
+      physicalColumn.push(this.returnPhysicalBlock(columnNumber, currentHeight, mapRowZ, coloursLayoutBlock.colourSetId));
+      // when noobline is enabled, map rows are offset South by one block
 
       // read docs/supportBlocks.md to know how this works
       switch (optionValue_whereSupportBlocks) {
@@ -423,24 +438,28 @@ class Map_NBT {
           break;
         }
         case WhereSupportBlocksModes.IMPORTANT.uniqueId: {
-          if (isSupportBlockMandatoryForColourSetIdAndTone(coloursLayoutBlock)) {
-            physicalColumn.push(this.returnPhysicalBlock(columnNumber, currentHeight - 1, rowNumber + 1, "NOOBLINE_SCAFFOLD"));
+          // Skip support blocks for the first row if the option is enabled
+          if (!(optionValue_noSupportBlocksFirstRow && rowNumber === 0) && isSupportBlockMandatoryForColourSetIdAndTone(coloursLayoutBlock)) {
+            physicalColumn.push(this.returnPhysicalBlock(columnNumber, currentHeight - 1, mapRowZ, "NOOBLINE_SCAFFOLD"));
           }
           break;
         }
         case WhereSupportBlocksModes.ALL_OPTIMIZED.uniqueId: {
           switch (rowNumber) {
             case 0: {
-              if (
-                coloursLayoutBlock.tone === "dark" ||
-                (coloursLayoutBlock.tone === "normal" && isSupportBlockMandatoryForColourSetIdAndTone(coloursLayoutBlock))
-              ) {
-                // first under-support block
-                physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 1, rowNumber, "NOOBLINE_SCAFFOLD"));
-              }
-              if (coloursLayoutBlock.tone === "dark" && isSupportBlockMandatoryForColourSetIdAndTone(coloursLayoutBlock)) {
-                // second under-support block
-                physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 2, rowNumber, "NOOBLINE_SCAFFOLD"));
+              // Skip support blocks for the first row if the option is enabled
+              if (!optionValue_noSupportBlocksFirstRow) {
+                if (
+                  coloursLayoutBlock.tone === "dark" ||
+                  (coloursLayoutBlock.tone === "normal" && isSupportBlockMandatoryForColourSetIdAndTone(coloursLayoutBlock))
+                ) {
+                  // first under-support block
+                  physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 1, northFaceZ, "NOOBLINE_SCAFFOLD"));
+                }
+                if (coloursLayoutBlock.tone === "dark" && isSupportBlockMandatoryForColourSetIdAndTone(coloursLayoutBlock)) {
+                  // second under-support block
+                  physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 2, northFaceZ, "NOOBLINE_SCAFFOLD"));
+                }
               }
               break;
             }
@@ -453,11 +472,11 @@ class Map_NBT {
                 (coloursLayoutBlock.tone === "normal" && isSupportBlockMandatoryForColourSetIdAndTone(coloursLayoutBlock))
               ) {
                 // first under-support block
-                physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 1, rowNumber, "NOOBLINE_SCAFFOLD"));
+                physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 1, northFaceZ, "NOOBLINE_SCAFFOLD"));
               }
               if (coloursLayoutBlock.tone === "dark" && isSupportBlockMandatoryForColourSetIdAndTone(coloursLayoutBlock)) {
                 // second under-support block
-                physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 2, rowNumber, "NOOBLINE_SCAFFOLD"));
+                physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 2, northFaceZ, "NOOBLINE_SCAFFOLD"));
               }
               break;
             }
@@ -470,11 +489,11 @@ class Map_NBT {
                 (coloursLayoutBlock.tone === "normal" && isSupportBlockMandatoryForColourSetIdAndTone(coloursLayoutBlock_north))
               ) {
                 // first under-support block
-                physicalColumn.push(this.returnPhysicalBlock(columnNumber, currentHeight - 1, rowNumber + 1, "NOOBLINE_SCAFFOLD"));
+                physicalColumn.push(this.returnPhysicalBlock(columnNumber, currentHeight - 1, mapRowZ, "NOOBLINE_SCAFFOLD"));
               }
               if (coloursLayoutBlock.tone === "light" && isSupportBlockMandatoryForColourSetIdAndTone(coloursLayoutBlock_north)) {
                 // second under-support block
-                physicalColumn.push(this.returnPhysicalBlock(columnNumber, currentHeight - 2, rowNumber + 1, "NOOBLINE_SCAFFOLD"));
+                physicalColumn.push(this.returnPhysicalBlock(columnNumber, currentHeight - 2, mapRowZ, "NOOBLINE_SCAFFOLD"));
               }
             }
             // eslint-disable-next-line no-fallthrough
@@ -489,14 +508,14 @@ class Map_NBT {
                 (coloursLayoutBlock_inQuestion.tone === "normal" && isSupportBlockMandatoryForColourSetIdAndTone(coloursLayoutBlock_north))
               ) {
                 // first under-support block
-                physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 1, rowNumber, "NOOBLINE_SCAFFOLD"));
+                physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 1, northFaceZ, "NOOBLINE_SCAFFOLD"));
               }
               if (
                 (coloursLayoutBlock.tone === "dark" && isSupportBlockMandatoryForColourSetIdAndTone(coloursLayoutBlock)) ||
                 (coloursLayoutBlock_inQuestion.tone === "light" && isSupportBlockMandatoryForColourSetIdAndTone(coloursLayoutBlock_north))
               ) {
                 // second under-support block
-                physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 2, rowNumber, "NOOBLINE_SCAFFOLD"));
+                physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 2, northFaceZ, "NOOBLINE_SCAFFOLD"));
               }
               break;
             }
@@ -506,25 +525,27 @@ class Map_NBT {
         case WhereSupportBlocksModes.ALL_DOUBLE_OPTIMIZED.uniqueId: {
           switch (rowNumber) {
             case 0: {
-              physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 1, rowNumber, "NOOBLINE_SCAFFOLD"));
-              if (coloursLayoutBlock.tone === "dark") {
-                physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 2, rowNumber, "NOOBLINE_SCAFFOLD"));
+              if (!optionValue_noSupportBlocksFirstRow) {
+                physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 1, northFaceZ, "NOOBLINE_SCAFFOLD"));
+                if (coloursLayoutBlock.tone === "dark") {
+                  physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 2, northFaceZ, "NOOBLINE_SCAFFOLD"));
+                }
               }
               break;
             }
             case mapColoursLayoutColumn.length - 1: {
-              physicalColumn.push(this.returnPhysicalBlock(columnNumber, currentHeight - 1, rowNumber + 1, "NOOBLINE_SCAFFOLD"));
+              physicalColumn.push(this.returnPhysicalBlock(columnNumber, currentHeight - 1, mapRowZ, "NOOBLINE_SCAFFOLD"));
               if (coloursLayoutBlock.tone === "light") {
-                physicalColumn.push(this.returnPhysicalBlock(columnNumber, currentHeight - 2, rowNumber + 1, "NOOBLINE_SCAFFOLD"));
+                physicalColumn.push(this.returnPhysicalBlock(columnNumber, currentHeight - 2, mapRowZ, "NOOBLINE_SCAFFOLD"));
               }
               // falls through
             }
             // eslint-disable-next-line no-fallthrough
             default: {
-              physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 1, rowNumber, "NOOBLINE_SCAFFOLD"));
+              physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 1, northFaceZ, "NOOBLINE_SCAFFOLD"));
               const coloursLayoutBlock_inQuestion = mapColoursLayoutColumn[rowNumber - 1];
               if (coloursLayoutBlock_inQuestion.tone === "light" || coloursLayoutBlock.tone === "dark") {
-                physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 2, rowNumber, "NOOBLINE_SCAFFOLD"));
+                physicalColumn.push(this.returnPhysicalBlock(columnNumber, previousHeight - 2, northFaceZ, "NOOBLINE_SCAFFOLD"));
               }
               break;
             }
@@ -565,7 +586,7 @@ class Map_NBT {
 
         for (let i = 0; i < physicalColumn.length; i++) {
           const physicalBlock = physicalColumn[i];
-          if (this.palette_paletteId_colourSetId[physicalBlock.state.value] === "NOOBLINE_SCAFFOLD") {
+          if (["NOOBLINE_SCAFFOLD", "NOOBLINE_ROW"].includes(this.palette_paletteId_colourSetId[physicalBlock.state.value])) {
             continue;
           }
           if (ascending && physicalBlock.pos.value.value[1] < visibleBlocksHeight) {
@@ -605,15 +626,16 @@ class Map_NBT {
         }
         break;
       }
-      case MapModes.SCHEMATIC_NBT.staircaseModes.CLASSIC.uniqueId: {
+      case MapModes.SCHEMATIC_NBT.staircaseModes.CLASSIC.uniqueId:
+      case MapModes.SCHEMATIC_NBT.staircaseModes.OFF.uniqueId: {
         // make sure the column's global minimum is at y = 0; doing this for every column gives the map a common base.
+        // for OFF mode this removes the empty air layers that would otherwise appear below flat maps.
         const columnMinimumY = physicalColumn.reduce((a, b) => (a.pos.value.value[1] < b.pos.value.value[1] ? a : b)).pos.value.value[1];
         physicalColumn.forEach((block) => {
           block.pos.value.value[1] -= columnMinimumY;
         });
         break;
       }
-      case MapModes.SCHEMATIC_NBT.staircaseModes.OFF.uniqueId:
       case MapModes.SCHEMATIC_NBT.staircaseModes.FULL_DARK.uniqueId:
       case MapModes.SCHEMATIC_NBT.staircaseModes.FULL_LIGHT.uniqueId: {
         break;
@@ -632,10 +654,11 @@ class Map_NBT {
   }
 
   setNBT_json_size() {
+    const mapDepth = this.mapColoursLayout[0].length + (optionValue_noSupportBlocksFirstRow ? 0 : 1);
     this.NBT_json.value.size.value.value = [
       this.mapColoursLayout.length,
       this.columnHeightsCache.reduce((a, b) => (a > b ? a : b)) + 1,
-      this.mapColoursLayout[0].length + 1,
+      mapDepth,
     ];
   }
 
@@ -647,6 +670,245 @@ class Map_NBT {
     this.setNBT_json_size();
 
     // console.log(NBT_json);
+
+    let nbtWriter = new NBTWriter();
+    nbtWriter.writeTopLevelCompound(this.NBT_json);
+    return nbtWriter.getData();
+  }
+}
+
+function unsigned64ToSignedLongPair(valueBigInt) {
+  const valueUnsigned = BigInt.asUintN(64, valueBigInt);
+  const highUnsigned = Number((valueUnsigned >> 32n) & 0xffffffffn);
+  const lowUnsigned = Number(valueUnsigned & 0xffffffffn);
+  const toSignedInt32 = (n) => (n > 0x7fffffff ? n - 0x100000000 : n);
+  return [toSignedInt32(highUnsigned), toSignedInt32(lowUnsigned)];
+}
+
+function unixMillisecondsToSignedLongPair(timestampMs) {
+  return unsigned64ToSignedLongPair(BigInt(timestampMs));
+}
+
+function createPackedLongArray(volume, bitsPerEntry, indexToState) {
+  const arrayLength = Math.ceil((volume * bitsPerEntry) / 64);
+  const longs = new Array(arrayLength).fill(0n);
+  const bitMask = (1n << BigInt(bitsPerEntry)) - 1n;
+
+  for (let index = 0; index < volume; index++) {
+    const value = BigInt(indexToState(index)) & bitMask;
+    const startOffset = index * bitsPerEntry;
+    const startLongIndex = Math.floor(startOffset / 64);
+    const startBitOffset = startOffset % 64;
+
+    longs[startLongIndex] = (longs[startLongIndex] & ~(bitMask << BigInt(startBitOffset))) | (value << BigInt(startBitOffset));
+
+    const endBitOffset = startBitOffset + bitsPerEntry;
+    if (endBitOffset > 64) {
+      const bitsInNextLong = endBitOffset - 64;
+      const nextMask = (1n << BigInt(bitsInNextLong)) - 1n;
+      longs[startLongIndex + 1] = (longs[startLongIndex + 1] & ~nextMask) | ((value >> BigInt(64 - startBitOffset)) & nextMask);
+    }
+  }
+
+  return longs.map((longValue) => unsigned64ToSignedLongPair(longValue));
+}
+
+class Map_Litematic {
+  constructor(map) {
+    this.mapNBT = new Map_NBT(map);
+  }
+
+  setLitematicDataFromMapNBT() {
+    this.mapNBT.constructPaletteLookups();
+    this.mapNBT.setNBT_json_palette();
+    this.mapNBT.setNBT_json_blocks();
+    this.mapNBT.setNBT_json_size();
+
+    const [width, height, length] = this.mapNBT.NBT_json.value.size.value.value;
+    const volume = width * height * length;
+    const now = Date.now();
+
+    // Litematic palette index 0 must be air.
+    const blockStatePalette = [
+      {
+        Name: {
+          type: TagTypes.string,
+          value: "minecraft:air",
+        },
+      },
+      ...this.mapNBT.NBT_json.value.palette.value.value,
+    ];
+
+    const stateByCoords = new Map();
+    this.mapNBT.NBT_json.value.blocks.value.value.forEach((block) => {
+      const [x, y, z] = block.pos.value.value;
+      const key = `${x}:${y}:${z}`;
+      stateByCoords.set(key, block.state.value + 1);
+    });
+
+    const bitsPerEntry = Math.max(Math.ceil(Math.log2(Math.max(blockStatePalette.length, 1))), 2);
+    const packedBlockStates = createPackedLongArray(volume, bitsPerEntry, (index) => {
+      const x = index % width;
+      const z = Math.floor(index / width) % length;
+      const y = Math.floor(index / (width * length));
+      const key = `${x}:${y}:${z}`;
+      return stateByCoords.get(key) || 0;
+    });
+
+    this.NBT_json = {
+      name: "Map",
+      value: {
+        MinecraftDataVersion: {
+          type: TagTypes.int,
+          value: optionValue_version.NBTVersion,
+        },
+        Version: {
+          type: TagTypes.int,
+          value: 5,
+        },
+        Metadata: {
+          type: TagTypes.compound,
+          value: {
+            TimeCreated: {
+              type: TagTypes.long,
+              value: unixMillisecondsToSignedLongPair(now),
+            },
+            TimeModified: {
+              type: TagTypes.long,
+              value: unixMillisecondsToSignedLongPair(now),
+            },
+            EnclosingSize: {
+              type: TagTypes.compound,
+              value: {
+                x: {
+                  type: TagTypes.int,
+                  value: width,
+                },
+                y: {
+                  type: TagTypes.int,
+                  value: height,
+                },
+                z: {
+                  type: TagTypes.int,
+                  value: length,
+                },
+              },
+            },
+            Description: {
+              type: TagTypes.string,
+              value: "MapArt schematic generated by MapartCraft",
+            },
+            RegionCount: {
+              type: TagTypes.int,
+              value: 1,
+            },
+            TotalBlocks: {
+              type: TagTypes.int,
+              value: stateByCoords.size,
+            },
+            Author: {
+              type: TagTypes.string,
+              value: "MapartCraft",
+            },
+            TotalVolume: {
+              type: TagTypes.int,
+              value: volume,
+            },
+            Name: {
+              type: TagTypes.string,
+              value: "Map",
+            },
+          },
+        },
+        Regions: {
+          type: TagTypes.compound,
+          value: {
+            map: {
+              type: TagTypes.compound,
+              value: {
+                BlockStates: {
+                  type: TagTypes.longArray,
+                  value: packedBlockStates,
+                },
+                PendingBlockTicks: {
+                  type: TagTypes.list,
+                  value: {
+                    type: TagTypes.end,
+                    value: [],
+                  },
+                },
+                Position: {
+                  type: TagTypes.compound,
+                  value: {
+                    x: {
+                      type: TagTypes.int,
+                      value: 0,
+                    },
+                    y: {
+                      type: TagTypes.int,
+                      value: 0,
+                    },
+                    z: {
+                      type: TagTypes.int,
+                      value: 0,
+                    },
+                  },
+                },
+                BlockStatePalette: {
+                  type: TagTypes.list,
+                  value: {
+                    type: TagTypes.compound,
+                    value: blockStatePalette,
+                  },
+                },
+                Size: {
+                  type: TagTypes.compound,
+                  value: {
+                    x: {
+                      type: TagTypes.int,
+                      value: width,
+                    },
+                    y: {
+                      type: TagTypes.int,
+                      value: height,
+                    },
+                    z: {
+                      type: TagTypes.int,
+                      value: length,
+                    },
+                  },
+                },
+                PendingFluidTicks: {
+                  type: TagTypes.list,
+                  value: {
+                    type: TagTypes.end,
+                    value: [],
+                  },
+                },
+                TileEntities: {
+                  type: TagTypes.list,
+                  value: {
+                    type: TagTypes.end,
+                    value: [],
+                  },
+                },
+                Entities: {
+                  type: TagTypes.list,
+                  value: {
+                    type: TagTypes.end,
+                    value: [],
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+  }
+
+  getNBT() {
+    this.setLitematicDataFromMapNBT();
 
     let nbtWriter = new NBTWriter();
     nbtWriter.writeTopLevelCompound(this.NBT_json);
@@ -828,6 +1090,7 @@ onmessage = (e) => {
   optionValue_staircasing = e.data.body.optionValue_staircasing;
   optionValue_whereSupportBlocks = e.data.body.optionValue_whereSupportBlocks;
   optionValue_supportBlock = e.data.body.optionValue_supportBlock;
+  optionValue_noSupportBlocksFirstRow = e.data.body.optionValue_noSupportBlocksFirstRow;
   pixelsData = e.data.body.pixelsData;
   maps = e.data.body.maps;
   currentSelectedBlocks = e.data.body.currentSelectedBlocks;
@@ -837,7 +1100,7 @@ onmessage = (e) => {
   setupExactColourCache();
   setupColoursLayoutsFromPixelsData();
 
-  if (["CREATE_NBT_JOINED_FOR_VIEW_ONLINE", "CREATE_NBT_JOINED"].includes(headerMessage)) {
+  if (["CREATE_NBT_JOINED_FOR_VIEW_ONLINE", "CREATE_NBT_JOINED", "CREATE_LITEMATIC_JOINED"].includes(headerMessage)) {
     mergeMaps();
   }
 
@@ -857,6 +1120,23 @@ onmessage = (e) => {
               whichMap_x: whichMap_x,
               whichMap_y: whichMap_y,
               NBT_Array: NBT_Array,
+            },
+          });
+        }
+      }
+      break;
+    }
+    case "CREATE_LITEMATIC_JOINED": {
+      for (let whichMap_y = 0; whichMap_y < maps.length; whichMap_y++) {
+        for (let whichMap_x = 0; whichMap_x < maps[0].length; whichMap_x++) {
+          const map_Litematic = new Map_Litematic(maps[whichMap_y][whichMap_x]);
+          const Litematic_Bytes = map_Litematic.getNBT();
+          postMessage({
+            head: "LITEMATIC_ARRAY",
+            body: {
+              whichMap_x: whichMap_x,
+              whichMap_y: whichMap_y,
+              Litematic_Bytes: Litematic_Bytes,
             },
           });
         }

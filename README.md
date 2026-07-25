@@ -9,7 +9,7 @@ MapartCraft is a static website written in ReactJS; running and building require
 # Building
 
 1. Acquire packages with `npm install`.
-2. Build using `npm run build`, or run a debug version with `npm run start`.
+2. Build using `npm run build`, or run a debug version with `NODE_OPTIONS=--openssl-legacy-provider npm start`.
 3. Alternatively use the shell script `build.sh` for deployment on Linux. This will also copy a `.htaccess` file to the build folder for use with Apache.
 
 The default build settings assume the app is being hosted at https://YOUR-SITE-HERE.com/mapartcraft. To change the folder from which the site is hosted modify the following:
@@ -31,4 +31,5 @@ Visit [MapartCraft](https://rebane2001.com/mapartcraft) on [rebane2001.com](http
 - [OpenMoji](https://github.com/hfg-gmuend/openmoji) for flags
 - Translation credits can be seen on the translated pages
 - [SelfAdjointOperator](https://github.com/SelfAdjointOperator) for some extra features
+- [@cartographer/litematica](https://github.com/julienvincent/cartographer/tree/master/packages/litematica) for litematica support
 - Code contributors can be seen on the [contributions page](https://github.com/rebane2001/mapartcraft/graphs/contributors)
