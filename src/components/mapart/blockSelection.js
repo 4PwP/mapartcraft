@@ -140,8 +140,8 @@ class BlockSelection extends Component {
                     style={{
                       cursor: "pointer",
                       ...(selectedBlocks[colourSetId] === "-1" && {
-                        filter: "drop-shadow(0 0 4px #658968)",
-                        backgroundColor: "#658968",
+                        filter: "drop-shadow(0 0 4px #5e83e0)",
+                        backgroundColor: "#5e83e0",
                       }),
                     }}
                   />
@@ -189,9 +189,9 @@ class BlockSelection extends Component {
                           style={{
                             cursor: "pointer",
                             ...(selectedBlocks[colourSetId] === blockId && {
-                              filter: "drop-shadow(0 0 4px #658968)",
+                              filter: "drop-shadow(0 0 4px #5e83e0)",
                               ...(block.presetIndex !== "CUSTOM" && {
-                                backgroundColor: "#658968",
+                                backgroundColor: "#5e83e0",
                               }),
                             }),
                           }}

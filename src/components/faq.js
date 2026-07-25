@@ -7,7 +7,7 @@ import IMG_ClassicVsValley from "../images/classicVsValley.png";
 function FAQ(props) {
   return (
     <div className="FAQ">
-      <Link to={`/${![undefined, "en"].includes(props.match.params.countryCode) ? props.match.params.countryCode : ""}`}>
+      <Link to="/">
         <h3>Close</h3>
       </Link>
 

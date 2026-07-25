@@ -72,6 +72,10 @@ class MapSettings extends Component {
       onOptionChange_PreProcessingBackgroundColour,
       optionValue_extras_moreStaircasingOptions,
       onOptionChange_extras_moreStaircasingOptions,
+      optionValue_minimumBlockCountEnabled,
+      onOptionChange_minimumBlockCountEnabled,
+      optionValue_minimumBlockCount,
+      onOptionChange_minimumBlockCount,
     } = this.props;
     const setting_mode = (
       <React.Fragment>
@@ -666,12 +670,45 @@ class MapSettings extends Component {
         </td>
       </tr>
     );
+    const setting_extras_minimumBlockCount = (
+      <tr>
+        <th>
+          <Tooltip tooltipText={getLocaleString("MAP-SETTINGS/EXTRAS/MINIMUM-BLOCK-COUNT-TT")}>
+            <b>
+              {getLocaleString("MAP-SETTINGS/EXTRAS/MINIMUM-BLOCK-COUNT-TITLE")}
+              {":"}
+            </b>
+          </Tooltip>{" "}
+        </th>
+        <td>
+          <input
+            type="checkbox"
+            checked={optionValue_minimumBlockCountEnabled}
+            onChange={onOptionChange_minimumBlockCountEnabled}
+          />
+        </td>
+        <td>
+          <BufferedNumberInput
+            min="0"
+            step="1"
+            value={optionValue_minimumBlockCount}
+            validators={[(t) => !isNaN(t), (t) => t >= 0]}
+            onValidInput={onOptionChange_minimumBlockCount}
+            disabled={!optionValue_minimumBlockCountEnabled}
+            style={{ width: "3em" }}
+          />
+        </td>
+      </tr>
+    );
     const settingGroup_extras = (
       <React.Fragment>
         <details>
           <summary>{getLocaleString("MAP-SETTINGS/EXTRAS/TITLE")}</summary>
           <table>
-            <tbody>{setting_extras_moreStaircasingOptions}</tbody>
+            <tbody>
+              {setting_extras_moreStaircasingOptions}
+              {setting_extras_minimumBlockCount}
+            </tbody>
           </table>
         </details>
       </React.Fragment>

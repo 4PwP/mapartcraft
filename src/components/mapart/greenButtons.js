@@ -426,10 +426,10 @@ class GreenButtons extends Component {
         <Tooltip tooltipText={getLocaleString("DONATE/TITLE-TT")}>
           <div className="greenButton">
             <a style={{ textDecoration: "none" }} href="./supporters">
-              <span className="greenButton_text_dummy" style={{ backgroundColor: "#688e6b", color: "#333333" }}>
+              <span className="greenButton_text_dummy" style={{ backgroundColor: "#5e83e0", color: "#333333" }}>
                 {getLocaleString("DONATE/TITLE")}
               </span>
-              <span className="greenButton_text" style={{ backgroundColor: "#688e6b", color: "#333333" }}>
+              <span className="greenButton_text" style={{ backgroundColor: "#5e83e0", color: "#333333" }}>
                 {getLocaleString("DONATE/TITLE")}
               </span>
             </a>

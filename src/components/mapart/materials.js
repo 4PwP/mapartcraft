@@ -95,7 +95,7 @@ class Materials extends Component {
   }
 
   render() {
-    const { getLocaleString, coloursJSON, optionValue_supportBlock, currentMaterialsData } = this.props;
+    const { getLocaleString, coloursJSON, optionValue_supportBlock, currentMaterialsData, selectedBlocks, onChangeColourSetBlock } = this.props;
     const { onlyMaxPerSplit } = this.state;
     const nonZeroMaterialsItems = this.getMaterialsCount_nonZeroMaterialsItems();
     const supportBlockCount = this.getMaterialsCount_supportBlock();
@@ -133,13 +133,25 @@ class Materials extends Component {
               </tr>
             )}
             {nonZeroMaterialsItems.map(([colourSetId, materialCount]) => {
-              const blockId = currentMaterialsData.currentSelectedBlocks[colourSetId];
+              const blockId = selectedBlocks[colourSetId];
+              const tooltipText =
+                blockId === "-1"
+                  ? getLocaleString("NONE")
+                  : coloursJSON[colourSetId].blocks[blockId].displayName;
               return (
                 <tr key={colourSetId}>
-                  <th>
-                    <Tooltip tooltipText={coloursJSON[colourSetId].blocks[blockId].displayName}>
-                      <BlockImage coloursJSON={coloursJSON} colourSetId={colourSetId} blockId={blockId} />
-                    </Tooltip>
+                  <th
+                    style={{ cursor: "pointer" }}
+                    onClick={() => onChangeColourSetBlock(colourSetId, "-1")}
+                    title="Click to blacklist this block (set to barrier)"
+                  >                        <Tooltip tooltipText={tooltipText}>
+                          <BlockImage
+                            getLocaleString={getLocaleString}
+                            coloursJSON={coloursJSON}
+                            colourSetId={colourSetId}
+                            blockId={blockId}
+                          />
+                        </Tooltip>
                   </th>
                   <th>{this.formatMaterialCount(materialCount)}</th>
                 </tr>

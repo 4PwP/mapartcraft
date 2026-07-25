@@ -52,6 +52,8 @@ class MapartController extends Component {
     preProcessingValue_backgroundColourSelect: BackgroundColourModes.OFF.uniqueId,
     preProcessingValue_backgroundColour: "#151515",
     optionValue_extras_moreStaircasingOptions: false,
+    optionValue_minimumBlockCountEnabled: false,
+    optionValue_minimumBlockCount: 50,
     uploadedImage: null,
     uploadedImage_baseFilename: null,
     presets: [],
@@ -391,6 +393,16 @@ class MapartController extends Component {
     }
   };
 
+  onOptionChange_minimumBlockCountEnabled = () => {
+    this.setState((currentState) => ({
+      optionValue_minimumBlockCountEnabled: !currentState.optionValue_minimumBlockCountEnabled,
+    }));
+  };
+
+  onOptionChange_minimumBlockCount = (value) => {
+    this.setState({ optionValue_minimumBlockCount: value });
+  };
+
   onGetViewOnlineNBT = (viewOnline_NBT) => {
     this.setState({ viewOnline_NBT });
   };
@@ -627,7 +639,27 @@ class MapartController extends Component {
   };
 
   handleSetMapMaterials = (currentMaterialsData) => {
-    this.setState({ currentMaterialsData: currentMaterialsData, mapPreviewWorker_inProgress: false });
+    let selectedBlocks = this.state.selectedBlocks;
+    if (this.state.optionValue_minimumBlockCountEnabled && this.state.optionValue_minimumBlockCount > 0) {
+      const totals = {};
+      for (const row of currentMaterialsData.maps) {
+        for (const map of row) {
+          for (const [colourSetId, materialCount] of Object.entries(map.materials)) {
+            totals[colourSetId] = (totals[colourSetId] || 0) + materialCount;
+          }
+        }
+      }
+      for (const [colourSetId, count] of Object.entries(totals)) {
+        if (count < this.state.optionValue_minimumBlockCount && selectedBlocks[colourSetId] !== "-1") {
+          selectedBlocks = { ...selectedBlocks, [colourSetId]: "-1" };
+        }
+      }
+    }
+    this.setState({
+      selectedBlocks,
+      currentMaterialsData: currentMaterialsData,
+      mapPreviewWorker_inProgress: false,
+    });
   };
 
   onChooseViewOnline3D = () => {
@@ -771,6 +803,8 @@ class MapartController extends Component {
       preProcessingValue_backgroundColourSelect,
       preProcessingValue_backgroundColour,
       optionValue_extras_moreStaircasingOptions,
+      optionValue_minimumBlockCountEnabled,
+      optionValue_minimumBlockCount,
       uploadedImage,
       uploadedImage_baseFilename,
       presets,
@@ -888,6 +922,10 @@ class MapartController extends Component {
               onOptionChange_PreProcessingBackgroundColour={this.onOptionChange_PreProcessingBackgroundColour}
               optionValue_extras_moreStaircasingOptions={optionValue_extras_moreStaircasingOptions}
               onOptionChange_extras_moreStaircasingOptions={this.onOptionChange_extras_moreStaircasingOptions}
+              optionValue_minimumBlockCountEnabled={optionValue_minimumBlockCountEnabled}
+              onOptionChange_minimumBlockCountEnabled={this.onOptionChange_minimumBlockCountEnabled}
+              optionValue_minimumBlockCount={optionValue_minimumBlockCount}
+              onOptionChange_minimumBlockCount={this.onOptionChange_minimumBlockCount}
             />
             <GreenButtons
               getLocaleString={getLocaleString}
@@ -932,6 +970,8 @@ class MapartController extends Component {
               optionValue_version={optionValue_version}
               optionValue_supportBlock={optionValue_supportBlock}
               currentMaterialsData={currentMaterialsData}
+              selectedBlocks={selectedBlocks}
+              onChangeColourSetBlock={this.handleChangeColourSetBlock}
             />
           ) : null}
         </div>
