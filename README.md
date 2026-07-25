@@ -1,6 +1,8 @@
 # MapartCraft
 
 A fork of mapcraft with added 1.21 support litematica and other stuff, this is not official
+The original MapartCraft is made by https://github.com/rebane2001/mapartcraft
+
 
 # Requirements
 

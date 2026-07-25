@@ -54,6 +54,7 @@ class MapartController extends Component {
     optionValue_extras_moreStaircasingOptions: false,
     optionValue_minimumBlockCountEnabled: false,
     optionValue_minimumBlockCount: 50,
+    mapPreviewRegenerateCounter: 0,
     uploadedImage: null,
     uploadedImage_baseFilename: null,
     presets: [],
@@ -396,11 +397,15 @@ class MapartController extends Component {
   onOptionChange_minimumBlockCountEnabled = () => {
     this.setState((currentState) => ({
       optionValue_minimumBlockCountEnabled: !currentState.optionValue_minimumBlockCountEnabled,
+      mapPreviewRegenerateCounter: currentState.mapPreviewRegenerateCounter + 1,
     }));
   };
 
   onOptionChange_minimumBlockCount = (value) => {
-    this.setState({ optionValue_minimumBlockCount: value });
+    this.setState((currentState) => ({
+      optionValue_minimumBlockCount: value,
+      mapPreviewRegenerateCounter: currentState.mapPreviewRegenerateCounter + 1,
+    }));
   };
 
   onGetViewOnlineNBT = (viewOnline_NBT) => {
@@ -640,6 +645,7 @@ class MapartController extends Component {
 
   handleSetMapMaterials = (currentMaterialsData) => {
     let selectedBlocks = this.state.selectedBlocks;
+    let didAutoBlacklist = false;
     if (this.state.optionValue_minimumBlockCountEnabled && this.state.optionValue_minimumBlockCount > 0) {
       const totals = {};
       for (const row of currentMaterialsData.maps) {
@@ -652,13 +658,16 @@ class MapartController extends Component {
       for (const [colourSetId, count] of Object.entries(totals)) {
         if (count < this.state.optionValue_minimumBlockCount && selectedBlocks[colourSetId] !== "-1") {
           selectedBlocks = { ...selectedBlocks, [colourSetId]: "-1" };
+          didAutoBlacklist = true;
         }
       }
     }
+    const nextRegenerateCounter = didAutoBlacklist ? this.state.mapPreviewRegenerateCounter + 1 : this.state.mapPreviewRegenerateCounter;
     this.setState({
       selectedBlocks,
       currentMaterialsData: currentMaterialsData,
       mapPreviewWorker_inProgress: false,
+      mapPreviewRegenerateCounter: nextRegenerateCounter,
     });
   };
 
@@ -805,6 +814,7 @@ class MapartController extends Component {
       optionValue_extras_moreStaircasingOptions,
       optionValue_minimumBlockCountEnabled,
       optionValue_minimumBlockCount,
+      mapPreviewRegenerateCounter,
       uploadedImage,
       uploadedImage_baseFilename,
       presets,
@@ -860,12 +870,12 @@ class MapartController extends Component {
             preProcessingValue_contrast={preProcessingValue_contrast}
             preProcessingValue_saturation={preProcessingValue_saturation}
             preProcessingValue_backgroundColourSelect={preProcessingValue_backgroundColourSelect}
-            preProcessingValue_backgroundColour={preProcessingValue_backgroundColour}
-            uploadedImage={uploadedImage}
-            onFileDialogEvent={this.onFileDialogEvent}
-            onGetMapMaterials={this.handleSetMapMaterials}
-            onMapPreviewWorker_begin={this.onMapPreviewWorker_begin}
-          />
+            preProcessingValue_backgroundColour={preProcessingValue_backgroundColour}              uploadedImage={uploadedImage}
+              onFileDialogEvent={this.onFileDialogEvent}
+              onGetMapMaterials={this.handleSetMapMaterials}
+              onMapPreviewWorker_begin={this.onMapPreviewWorker_begin}
+              mapPreviewRegenerateCounter={mapPreviewRegenerateCounter}
+            />
           <div style={{ display: "block" }}>
             <MapSettings
               getLocaleString={getLocaleString}

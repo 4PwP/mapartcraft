@@ -49,7 +49,7 @@ class Root extends Component {
     return (
       <React.Fragment>
         <div className="titleAndLanguages">
-          <span><h1>MapartCraft</h1></span>
+          <span><h1>MapartCraft but its better :3c</h1></span>
         </div>
         <Header getLocaleString={this.getLocaleString} />
         <MapartController getLocaleString={this.getLocaleString} onCorruptedPreset={this.showCorruptedPresetWarning} />

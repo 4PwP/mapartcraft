@@ -12,7 +12,7 @@ import NBTWorker from "./workers/nbt.jsworker";
 import "./greenButtons.css";
 
 class GreenButtons extends Component {
-  // For download buttons and donate link etc
+  // For download buttons
   state = {
     buttonWidth_viewOnline: 1,
     buttonWidth_NBT_Joined: 1,
@@ -421,26 +421,9 @@ class GreenButtons extends Component {
         </React.Fragment>
       );
     }
-    const button_donate = (
-      <React.Fragment>
-        <Tooltip tooltipText={getLocaleString("DONATE/TITLE-TT")}>
-          <div className="greenButton">
-            <a style={{ textDecoration: "none" }} href="./supporters">
-              <span className="greenButton_text_dummy" style={{ backgroundColor: "#5e83e0", color: "#333333" }}>
-                {getLocaleString("DONATE/TITLE")}
-              </span>
-              <span className="greenButton_text" style={{ backgroundColor: "#5e83e0", color: "#333333" }}>
-                {getLocaleString("DONATE/TITLE")}
-              </span>
-            </a>
-          </div>
-        </Tooltip>
-      </React.Fragment>
-    );
     const buttonsDiv = (
       <div>
         {buttons_mapModeConditional}
-        {button_donate}
       </div>
     );
     return buttonsDiv;

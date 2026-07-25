@@ -83,6 +83,7 @@ class MapPreview extends Component {
       prevProps.preProcessingValue_backgroundColourSelect === newProps.preProcessingValue_backgroundColourSelect,
       prevProps.preProcessingValue_backgroundColour === newProps.preProcessingValue_backgroundColour,
       prevProps.uploadedImage === newProps.uploadedImage,
+      prevProps.mapPreviewRegenerateCounter === newProps.mapPreviewRegenerateCounter,
     ];
     return (
       newProps.uploadedImage !== null &&
@@ -394,30 +395,14 @@ class MapPreview extends Component {
           </div>
           <div>
             <Tooltip tooltipText={getLocaleString("MAP-PREVIEW/SCALE-PLUS-TT")}>
-              <img
-                alt="+"
-                className="sizeButton"
-                src={IMG_Null}
-                style={{
-                  backgroundImage: `url(${IMG_Textures})`,
-                  backgroundPositionX: "-96px",
-                  backgroundPositionY: "-2048px",
-                }}
-                onClick={this.increasePreviewScale}
-              />
+              <button type="button" className="sizeButton sizeButton_plus" onClick={this.increasePreviewScale}>
+                +
+              </button>
             </Tooltip>
             <Tooltip tooltipText={getLocaleString("MAP-PREVIEW/SCALE-MINUS-TT")}>
-              <img
-                alt="-"
-                className="sizeButton"
-                src={IMG_Null}
-                style={{
-                  backgroundImage: `url(${IMG_Textures})`,
-                  backgroundPositionX: "-128px",
-                  backgroundPositionY: "-2048px",
-                }}
-                onClick={this.decreasePreviewScale}
-              />
+              <button type="button" className="sizeButton sizeButton_minus" onClick={this.decreasePreviewScale}>
+                −
+              </button>
             </Tooltip>
           </div>
         </div>
