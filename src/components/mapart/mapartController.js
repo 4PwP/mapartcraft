@@ -42,6 +42,8 @@ class MapartController extends Component {
     optionValue_staircasing: MapModes.SCHEMATIC_NBT.staircaseModes.VALLEY.uniqueId,
     optionValue_staircaseYPositive: true,
     optionValue_staircaseYNegative: true,
+    optionValue_staircaseYup: 0, // 0 = unlimited (no cap on how many blocks the map may rise)
+    optionValue_staircaseYdown: 0, // 0 = unlimited (no cap on how many blocks the map may fall)
     optionValue_whereSupportBlocks: WhereSupportBlocksModes.ALL_OPTIMIZED.uniqueId,
     optionValue_supportBlock: "cobblestone",
     optionValue_noSupportBlocksFirstRow: false,
@@ -316,6 +318,16 @@ class MapartController extends Component {
     }));
   };
 
+  onOptionChange_staircaseYup = (e) => {
+    const value = Math.max(0, parseInt(e.target.value, 10) || 0);
+    this.setState({ optionValue_staircaseYup: value });
+  };
+
+  onOptionChange_staircaseYdown = (e) => {
+    const value = Math.max(0, parseInt(e.target.value, 10) || 0);
+    this.setState({ optionValue_staircaseYdown: value });
+  };
+
   isCustom3DMode() {
     const { optionValue_modeNBTOrMapdat, optionValue_staircasing } = this.state;
     return (
@@ -325,6 +337,10 @@ class MapartController extends Component {
   }
 
   getToneKeysMemoKey() {
+    // Note: optionValue_staircaseYup/Ydown are intentionally NOT part of this key. They don't change
+    // which tone keys are structurally available (that's still driven by mode/staircasing/Positive/Negative);
+    // they only cap how far the worker lets a column climb/descend. They reach the worker via their own
+    // props on <MapPreview> (see mapPreview.js), independently of this memoized array.
     const { optionValue_modeNBTOrMapdat, optionValue_staircasing, optionValue_staircaseYPositive, optionValue_staircaseYNegative } = this.state;
     return `${optionValue_modeNBTOrMapdat}|${optionValue_staircasing}|${optionValue_staircaseYPositive}|${optionValue_staircaseYNegative}`;
   }
@@ -897,6 +913,8 @@ class MapartController extends Component {
       optionValue_minimumBlockCount,
       optionValue_staircaseYPositive,
       optionValue_staircaseYNegative,
+      optionValue_staircaseYup,
+      optionValue_staircaseYdown,
       mapPreviewRegenerateCounter,
       uploadedImage,
       uploadedImage_baseFilename,
@@ -962,6 +980,8 @@ class MapartController extends Component {
             mapPreviewRegenerateCounter={mapPreviewRegenerateCounter}
             effectiveToneKeys={this.getActiveToneKeys()}
             applyValleyOptimization={this.applyValleyOptimization()}
+            optionValue_staircaseYup={optionValue_staircaseYPositive ? optionValue_staircaseYup : 0}
+            optionValue_staircaseYdown={optionValue_staircaseYNegative ? optionValue_staircaseYdown : 0}
           />
           <div style={{ display: "block" }}>
             <MapSettings
@@ -991,6 +1011,10 @@ class MapartController extends Component {
               onOptionChange_staircaseYPositive={this.onOptionChange_staircaseYPositive}
               optionValue_staircaseYNegative={optionValue_staircaseYNegative}
               onOptionChange_staircaseYNegative={this.onOptionChange_staircaseYNegative}
+              optionValue_staircaseYup={optionValue_staircaseYup}
+              onOptionChange_staircaseYup={this.onOptionChange_staircaseYup}
+              optionValue_staircaseYdown={optionValue_staircaseYdown}
+              onOptionChange_staircaseYdown={this.onOptionChange_staircaseYdown}
               optionValue_whereSupportBlocks={optionValue_whereSupportBlocks}
               onOptionChange_WhereSupportBlocks={this.onOptionChange_WhereSupportBlocks}
               optionValue_supportBlock={optionValue_supportBlock}

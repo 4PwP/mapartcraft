@@ -10,6 +10,8 @@ var optionValue_mapSize_y;
 var optionValue_staircasing;
 var optionValue_effectiveToneKeys;
 var optionValue_applyValleyOptimization;
+var optionValue_staircaseYup; // max blocks a column may rise above its starting height; 0 = unlimited
+var optionValue_staircaseYdown; // max blocks a column may fall below its starting height; 0 = unlimited
 var optionValue_whereSupportBlocks;
 var optionValue_transparency;
 var optionValue_transparencyTolerance;
@@ -65,9 +67,12 @@ function squaredEuclideanMetricColours(pixel1, pixel2) {
   return r * r + g * g + b * b; // actually L*a*b* if optionValue_betterColour but metric is calculated the same
 }
 
-function findClosestColourSetIdAndToneAndRGBTo(pixelRGB) {
+function findClosestColourSetIdAndToneAndRGBTo(pixelRGB, allowUp = true, allowDown = true) {
   let RGBBinary = (pixelRGB[0] << 16) + (pixelRGB[1] << 8) + pixelRGB[2]; // injective mapping RGB to concatenated binaries
-  if (colourCache.has(RGBBinary)) {
+  // The RGB->tone cache only holds valid results for the unrestricted case. Once a column hits its
+  // Yup/Ydown elevation cap, the same RGB value can legitimately map to a different (allowed) tone,
+  // so we must bypass (and not pollute) the cache whenever a restriction is active.
+  if (allowUp && allowDown && colourCache.has(RGBBinary)) {
     return colourCache.get(RGBBinary);
   } else {
     let shortestDistance = 9999999;
@@ -75,6 +80,8 @@ function findClosestColourSetIdAndToneAndRGBTo(pixelRGB) {
 
     colourSetsToUse.forEach((colourSet) => {
       Object.keys(colourSet.tonesRGB).forEach((toneKey) => {
+        if (toneKey === "light" && !allowUp) return; // column is already at its max allowed height
+        if (toneKey === "dark" && !allowDown) return; // column is already at its min allowed height
         const toneRGB = colourSet.tonesRGB[toneKey];
         let squareDistance = squaredEuclideanMetricColours(toneRGB, pixelRGB);
         if (squareDistance < shortestDistance) {
@@ -86,14 +93,22 @@ function findClosestColourSetIdAndToneAndRGBTo(pixelRGB) {
         }
       });
     });
-    colourCache.set(RGBBinary, closestPixel);
+    if (closestPixel === undefined) {
+      // Edge case: colourSetsToUse only exposes "light"/"dark" (no "normal") AND both directions are
+      // capped at this pixel. Fall back to the full (unrestricted) search so we never return nothing.
+      return findClosestColourSetIdAndToneAndRGBTo(pixelRGB, true, true);
+    }
+    if (allowUp && allowDown) {
+      colourCache.set(RGBBinary, closestPixel);
+    }
     return closestPixel;
   }
 }
 
-function findClosest2ColourSetIdAndToneAndRGBTo(pixelRGB) {
+function findClosest2ColourSetIdAndToneAndRGBTo(pixelRGB, allowUp = true, allowDown = true) {
   let RGBBinary = (pixelRGB[0] << 16) + (pixelRGB[1] << 8) + pixelRGB[2];
-  if (colourCache.has(RGBBinary)) {
+  // Same caching caveat as findClosestColourSetIdAndToneAndRGBTo: only cache/reuse the unrestricted result.
+  if (allowUp && allowDown && colourCache.has(RGBBinary)) {
     return colourCache.get(RGBBinary);
   } else {
     let shortestDistance1 = 9999999;
@@ -103,6 +118,8 @@ function findClosest2ColourSetIdAndToneAndRGBTo(pixelRGB) {
 
     colourSetsToUse.forEach((colourSet) => {
       Object.keys(colourSet.tonesRGB).forEach((toneKey) => {
+        if (toneKey === "light" && !allowUp) return; // column is already at its max allowed height
+        if (toneKey === "dark" && !allowDown) return; // column is already at its min allowed height
         const toneRGB = colourSet.tonesRGB[toneKey];
         let squareDistance = squaredEuclideanMetricColours(toneRGB, pixelRGB);
         if (squareDistance < shortestDistance1) {
@@ -131,7 +148,9 @@ function findClosest2ColourSetIdAndToneAndRGBTo(pixelRGB) {
       closestPixel2 = closestPixel1; // if closestPixel1 is a better fit to closestPixel2 than closestPixel2 is to the actual pixel
     }
     let newPixels = [shortestDistance1, shortestDistance2, closestPixel1, closestPixel2];
-    colourCache.set(RGBBinary, newPixels);
+    if (allowUp && allowDown) {
+      colourCache.set(RGBBinary, newPixels);
+    }
     return newPixels;
   }
 }
@@ -233,6 +252,12 @@ function getMapartImageDataAndMaterials() {
 
   const unnecessarySupportBlock = new Map();
 
+  // Tracks, per image-column (multimap_x), how many blocks that column currently sits above (positive)
+  // or below (negative) its own starting height. Used to enforce optionValue_staircaseYup/Ydown caps.
+  // The main loop is row-major (all x for a given y, then next y), so this needs one entry per column,
+  // not a single scalar.
+  const columnHeights = new Array(optionValue_mapSize_x * 128).fill(0);
+
   for (let i = 0; i < canvasImageData.data.length; i += 4) {
     const indexR = i;
     const indexG = i + 1;
@@ -245,6 +270,11 @@ function getMapartImageDataAndMaterials() {
     const whichMap_x = Math.floor(multimap_x / 128);
     const whichMap_y = Math.floor(multimap_y / 128);
     const individualMap_y = multimap_y % 128;
+
+    // allowUp/allowDown: whether this column may still climb/descend further before hitting its cap.
+    // 0 means "no cap" for that direction.
+    const allowUp = optionValue_staircaseYup <= 0 || columnHeights[multimap_x] < optionValue_staircaseYup;
+    const allowDown = optionValue_staircaseYdown <= 0 || columnHeights[multimap_x] > -optionValue_staircaseYdown;
 
     const unnecessarySupportBlockMapIndex =
       (whichMap_y * optionValue_mapSize_x + whichMap_x) * 128 +
@@ -282,7 +312,7 @@ function getMapartImageDataAndMaterials() {
         // Switch statement that checks the dither method every pixel;
         // I have tested a refactor that only checks once however the time difference is negligible and code quality deteriorates
         case DitherMethods.None.uniqueId: {
-          closestColourSetIdAndTone = findClosestColourSetIdAndToneAndRGBTo(oldPixel);
+          closestColourSetIdAndTone = findClosestColourSetIdAndToneAndRGBTo(oldPixel, allowUp, allowDown);
           const closestColour = colourSetIdAndToneToRGB(closestColourSetIdAndTone.colourSetId, closestColourSetIdAndTone.tone);
           canvasImageData.data[indexR] = closestColour[0];
           canvasImageData.data[indexG] = closestColour[1];
@@ -292,7 +322,7 @@ function getMapartImageDataAndMaterials() {
         case DitherMethods.Bayer44.uniqueId:
         case DitherMethods.Bayer22.uniqueId:
         case DitherMethods.Ordered33.uniqueId: {
-          const newPixels = findClosest2ColourSetIdAndToneAndRGBTo(oldPixel);
+          const newPixels = findClosest2ColourSetIdAndToneAndRGBTo(oldPixel, allowUp, allowDown);
           // newPixels = [shortestDistance1, shortestDistance2, newPixel1, newPixel2]
           if (
             (newPixels[0] * (ditherMatrix[0].length * ditherMatrix.length + 1)) / newPixels[1] >
@@ -315,7 +345,7 @@ function getMapartImageDataAndMaterials() {
         case DitherMethods.SierraLite.uniqueId:
         case DitherMethods.Stucki.uniqueId:
         case DitherMethods.Atkinson.uniqueId: {
-          closestColourSetIdAndTone = findClosestColourSetIdAndToneAndRGBTo(oldPixel);
+          closestColourSetIdAndTone = findClosestColourSetIdAndToneAndRGBTo(oldPixel, allowUp, allowDown);
           const closestColour = colourSetIdAndToneToRGB(closestColourSetIdAndTone.colourSetId, closestColourSetIdAndTone.tone);
           canvasImageData.data[indexR] = closestColour[0];
           canvasImageData.data[indexG] = closestColour[1];
@@ -405,6 +435,14 @@ function getMapartImageDataAndMaterials() {
         }
         default:
           break;
+      }
+
+      // Advance this column's running elevation now that its tone for this row is final, so the
+      // optionValue_staircaseYup/Ydown cap is respected on the next row down for this same column.
+      if (closestColourSetIdAndTone.tone === "light") {
+        columnHeights[multimap_x] += 1;
+      } else if (closestColourSetIdAndTone.tone === "dark") {
+        columnHeights[multimap_x] -= 1;
       }
 
       // support-block count: mapdat can skip this
@@ -615,6 +653,8 @@ onmessage = (e) => {
   optionValue_staircasing = e.data.body.optionValue_staircasing;
   optionValue_effectiveToneKeys = e.data.body.effectiveToneKeys;
   optionValue_applyValleyOptimization = e.data.body.applyValleyOptimization;
+  optionValue_staircaseYup = e.data.body.optionValue_staircaseYup || 0;
+  optionValue_staircaseYdown = e.data.body.optionValue_staircaseYdown || 0;
   optionValue_whereSupportBlocks = e.data.body.optionValue_whereSupportBlocks;
   optionValue_transparency = e.data.body.optionValue_transparency;
   optionValue_transparencyTolerance = e.data.body.optionValue_transparencyTolerance;

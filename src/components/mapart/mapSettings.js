@@ -44,6 +44,10 @@ class MapSettings extends Component {
       onOptionChange_staircaseYPositive,
       optionValue_staircaseYNegative,
       onOptionChange_staircaseYNegative,
+      optionValue_staircaseYup,
+      onOptionChange_staircaseYup,
+      optionValue_staircaseYdown,
+      onOptionChange_staircaseYdown,
       optionValue_whereSupportBlocks,
       onOptionChange_WhereSupportBlocks,
       optionValue_supportBlock,
@@ -722,6 +726,17 @@ class MapSettings extends Component {
             </th>
             <td colSpan="2">
               <input type="checkbox" checked={optionValue_staircaseYPositive} onChange={onOptionChange_staircaseYPositive} />
+              {optionValue_staircaseYPositive && (
+                <input
+                  type="number"
+                  min="0"
+                  value={optionValue_staircaseYup}
+                  onChange={onOptionChange_staircaseYup}
+                  placeholder={getLocaleString("MAP-SETTINGS/EXTRAS/MAX-BLOCKS-UP-PLACEHOLDER")}
+                  size={String(optionValue_staircaseYup || "").length || 1}
+                  style={{ marginLeft: "0.5em" }}
+                />
+              )}
             </td>
           </tr>
           <tr>
@@ -735,6 +750,17 @@ class MapSettings extends Component {
             </th>
             <td colSpan="2">
               <input type="checkbox" checked={optionValue_staircaseYNegative} onChange={onOptionChange_staircaseYNegative} />
+              {optionValue_staircaseYNegative && (
+                <input
+                  type="number"
+                  min="0"
+                  value={optionValue_staircaseYdown}
+                  onChange={onOptionChange_staircaseYdown}
+                  placeholder={getLocaleString("MAP-SETTINGS/EXTRAS/MAX-BLOCKS-DOWN-PLACEHOLDER")}
+                  size={String(optionValue_staircaseYdown || "").length || 1}
+                  style={{ marginLeft: "0.5em" }}
+                />
+              )}
             </td>
           </tr>
         </React.Fragment>

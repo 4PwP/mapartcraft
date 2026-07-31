@@ -154,7 +154,9 @@
       "USE-POSITIVE-Y": "Use +y direction (stairs going up)",
       "USE-NEGATIVE-Y": "Use -y direction (stairs going down)",
       "USE-POSITIVE-Y-TT": "Enable stairs so blocks can rise above the base map plane (using light tones). Disabling this is like having only the lower half of the staircase.",
-      "USE-NEGATIVE-Y-TT": "Enable stairs so blocks can drop below the base map plane (using dark tones). Disabling this is like having only the upper half of the staircase."
+      "USE-NEGATIVE-Y-TT": "Enable stairs so blocks can drop below the base map plane (using dark tones). Disabling this is like having only the upper half of the staircase.",
+      "MAX-BLOCKS-UP-PLACEHOLDER": "Max blocks up (0 = unlimited)",
+      "MAX-BLOCKS-DOWN-PLACEHOLDER": "Max blocks down (0 = unlimited)"
     }
   },
   "DOWNLOAD": {
