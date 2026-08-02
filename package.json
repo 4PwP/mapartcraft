@@ -2,7 +2,7 @@
   "name": "mapartcraft-react",
   "version": "0.1.0",
   "private": true,
-  "homepage": "/mapartcraft",
+  "homepage": "https://zavzagali.github.io/mapartcraft",
   "dependencies": {
     "@taku128/java-schematic": "^0.2.0",
     "@testing-library/jest-dom": "^5.17.0",
