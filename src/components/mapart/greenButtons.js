@@ -92,7 +92,7 @@ class GreenButtons extends Component {
         case "NBT_FOR_VIEW_ONLINE": {
           const t1 = performance.now();
           console.log(`Created NBT for 'view online' by ${(t1 - t0).toString()}ms`);
-          const { NBT_Array } = e.data.body;
+          const { NBT_Array, whichMap_x, whichMap_y } = e.data.body; // <-- Değişkenler buradan destruct ediliyor
           const NBT_Array_gzipped = gzip(new Uint8Array(NBT_Array));
           if (workerHeader === "CREATE_NBT_SPLIT") {
             zipFile.file(`${uploadedImage_baseFilename}_${whichMap_x}_${whichMap_y}.nbt`, NBT_Array_gzipped);
