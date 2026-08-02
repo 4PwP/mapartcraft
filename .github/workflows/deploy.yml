@@ -28,14 +28,20 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build
         env:
+          CI: false
           NODE_OPTIONS: --openssl-legacy-provider
-          # repo adına göre alt-yol; kendi kullanıcı/repo adınla değiştir
           PUBLIC_URL: /mapartcraft
         run: npm run build
+
+      - name: Fix Web Worker MIME Types for GitHub Pages
+        run: |
+          cd build
+          find . -name "*.jsworker" | while read fname; do mv "$fname" "${fname%.jsworker}.js"; done
+          find . -type f \( -name "*.js" -o -name "*.html" \) -exec sed -i 's/\.jsworker/\.js/g' {} +
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
